@@ -110,7 +110,7 @@ function App() {
       if (response.ok && data.short_url) {
         const shortUrlValue = data.short_url.startsWith('http') 
           ? data.short_url 
-          : `https://sunminiurl.onrender.com/${data.short_url}`
+          : `${data.short_url}`
         
         const newUrl: ShortenedUrl = {
           id: Date.now().toString(),
@@ -380,14 +380,6 @@ function App() {
                               <Copy className="w-4 h-4 mr-2" />
                             )}
                             {copied ? 'Copied!' : 'Copy'}
-                          </Button>
-                          <Button
-                            onClick={() => window.open(result.shortUrl, '_blank')}
-                            variant="outline"
-                            className="rounded-xl"
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Open
                           </Button>
                         </div>
                       </div>
