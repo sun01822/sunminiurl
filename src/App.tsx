@@ -14,7 +14,8 @@ import {
   History,
   Trash2,
   Moon,
-  Sun
+  Sun,
+  Search
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,18 +28,12 @@ interface ShortenedUrl {
   id: string
   originalUrl: string
   shortUrl: string
-  shortCode: string
+  status: string
   createdAt: Date
 }
 
-interface ApiResponse {
-  success: boolean
-  data?: {
-    short_code: string
-    short_url: string
-    original_url: string
-  }
-  error?: string
+interface LookupResult {
+  originalUrl: string
 }
 
 function App() {
@@ -49,7 +44,10 @@ function App() {
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState<ShortenedUrl[]>([])
   const [isDarkMode, setIsDarkMode] = useState(false)
-  const [activeTab, setActiveTab] = useState<'shorten' | 'history'>('shorten')
+  const [activeTab, setActiveTab] = useState<'shorten' | 'lookup' | 'history'>('shorten')
+  const [lookupCode, setLookupCode] = useState('')
+  const [lookupResult, setLookupResult] = useState<LookupResult | null>(null)
+  const [isLookingUp, setIsLookingUp] = useState(false)
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -107,22 +105,26 @@ function App() {
         }),
       })
 
-      const data: ApiResponse = await response.json()
+      const data = await response.json()
 
-      if (data.success && data.data) {
+      if (response.ok && data.short_url) {
+        const shortUrlValue = data.short_url.startsWith('http') 
+          ? data.short_url 
+          : `https://sunminiurl.onrender.com/${data.short_url}`
+        
         const newUrl: ShortenedUrl = {
           id: Date.now().toString(),
-          originalUrl: data.data.original_url,
-          shortUrl: data.data.short_url,
-          shortCode: data.data.short_code,
+          originalUrl: url,
+          shortUrl: shortUrlValue,
+          status: data.status,
           createdAt: new Date(),
         }
 
         setResult(newUrl)
-        setHistory(prev => [newUrl, ...prev].slice(0, 10)) // Keep last 10
+        setHistory(prev => [newUrl, ...prev].slice(0, 10))
         toast.success('URL shortened successfully!')
       } else {
-        toast.error(data.error || 'Failed to shorten URL')
+        toast.error(data.error || data.message || 'Failed to shorten URL')
       }
     } catch (error) {
       toast.error('Network error. Please try again.')
@@ -151,6 +153,40 @@ function App() {
   const clearHistory = () => {
     setHistory([])
     toast.success('History cleared')
+  }
+
+  const lookupUrl = async () => {
+    if (!lookupCode.trim()) {
+      toast.error('Please enter a short code or URL')
+      return
+    }
+
+    setIsLookingUp(true)
+    setLookupResult(null)
+
+    try {
+      let code = lookupCode.trim()
+      if (code.includes('/')) {
+        code = code.split('/').pop() || code
+      }
+
+      const response = await fetch(`https://sunminiurl.onrender.com/api/v1/shorten/${code}`)
+      const data = await response.json()
+
+      if (data.original_url) {
+        setLookupResult({
+          originalUrl: data.original_url,
+        })
+        toast.success('URL found!')
+      } else {
+        toast.error(data.error || 'URL not found')
+      }
+    } catch (error) {
+      toast.error('Network error. Please try again.')
+      console.error('Error:', error)
+    } finally {
+      setIsLookingUp(false)
+    }
   }
 
   const toggleDarkMode = () => {
@@ -220,6 +256,17 @@ function App() {
                 }`}
               >
                 Shorten URL
+              </button>
+              <button
+                onClick={() => setActiveTab('lookup')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                  activeTab === 'lookup'
+                    ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <Search className="w-4 h-4" />
+                Lookup
               </button>
               <button
                 onClick={() => setActiveTab('history')}
@@ -394,6 +441,102 @@ function App() {
                   </Card>
                 ))}
               </div>
+            </>
+          ) : activeTab === 'lookup' ? (
+            <>
+              <Card className="mb-8 border-0 shadow-2xl shadow-indigo-500/10 dark:shadow-none dark:bg-gray-800/50 backdrop-blur-sm animate-scale-in">
+                <CardContent className="p-6 sm:p-8">
+                  <div className="text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      Lookup Original URL
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Enter a short code or shortened URL to find the original URL
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                        <Search className="w-5 h-5" />
+                      </div>
+                      <Input
+                        type="text"
+                        placeholder="Enter short code or URL (e.g., LxN6kws5)"
+                        value={lookupCode}
+                        onChange={(e) => setLookupCode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && lookupUrl()}
+                        className="pl-12 pr-4 py-6 text-base border-2 border-gray-200 dark:border-gray-700 focus:border-indigo-500 dark:focus:border-indigo-400 rounded-xl transition-all duration-300"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={lookupUrl}
+                      disabled={isLookingUp}
+                      className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {isLookingUp ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Looking up...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-5 h-5 mr-2" />
+                          Lookup URL
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {lookupResult && (
+                <Card className="mb-8 border-0 shadow-2xl shadow-green-500/10 dark:shadow-none dark:bg-gray-800/50 backdrop-blur-sm animate-scale-in">
+                  <CardContent className="p-6 sm:p-8">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="text-green-600 dark:text-green-400 font-semibold">
+                        Found! Original URL
+                      </span>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 mb-4">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Original URL</p>
+                      <a
+                        href={lookupResult.originalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors truncate block"
+                      >
+                        {lookupResult.originalUrl}
+                      </a>
+                    </div>
+
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => copyToClipboard(lookupResult.originalUrl)}
+                          variant="outline"
+                          className="rounded-xl"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy
+                        </Button>
+                        <Button
+                          onClick={() => window.open(lookupResult.originalUrl, '_blank')}
+                          variant="outline"
+                          className="rounded-xl"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Open
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           ) : (
             /* History Tab */
