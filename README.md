@@ -1,73 +1,71 @@
-# React + TypeScript + Vite
+# SunMiniURL
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SunMiniURL is a fast, free, and incredibly simple URL shortener built with React, TypeScript, and Vite. It allows you to transform long, complex URLs into clean, shareable links in seconds.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **URL Shortening**: Easily convert long URLs into compact, manageable short links.
+- **Custom Short Codes**: Create memorable custom short codes (e.g., `sunminiurl.vercel.app/my-custom-link`).
+- **Instant Redirection**: Lightning-fast redirects when visiting a generated short URL.
+- **URL Lookup**: Easily find the original destination of any short code or shortened URL using the built-in lookup tool.
+- **Link History**: Automatically keeps a local history of your recently shortened URLs for easy access and copying.
+- **Dark/Light Mode**: Beautiful UI built with Tailwind CSS, complete with a dark mode toggle.
+- **Fast & Secure**: Powered by a robust API to ensure your links are generated quickly and are always accessible.
 
-## React Compiler
+## 🛠️ How it Works (Under the Hood)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+SunMiniURL operates as a Single Page Application (SPA) built with Vite and React. The redirection magic is handled completely on the frontend client side:
 
-## Expanding the ESLint configuration
+1. **Routing:** When a user visits a short link like `https://sunminiurl.vercel.app/develop`, Vercel naturally expects a file named `develop`. However, thanks to the `vercel.json` rewrite configuration, all requests fall back to `index.html`.
+2. **Path Parsing:** Upon loading, the React app (`App.tsx`) extracts the path (`/develop`) from `window.location.pathname`.
+3. **API Fetch:** A request is dispatched to the backend API (`https://sunminiurl.onrender.com/api/v1/shorten/develop`) to retrieve the associated `original_url`.
+4. **Seamless Redirect:** While fetching, the user is presented with a sleek loading screen. Once the original URL is retrieved, the app instantly redirects the user via `window.location.href`. If the code doesn't exist, it gracefully routes them to the home page with an error notification.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 How to Run the Project
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+This project uses **Node.js** and **npm** for package management.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Prerequisites
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- Node.js (v18 or higher recommended)
+- npm or yarn
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Installation & Setup
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repository-url>
+   cd sunminiurl
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+   *The app will be available at `http://localhost:5173`.*
+
+4. **Build for Production:**
+   ```bash
+   npm run build
+   ```
+
+5. **Preview Production Build:**
+   ```bash
+   npm run preview
+   ```
+
+## 💻 Tech Stack
+
+- **Framework:** React + Vite
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + shadcn/ui components
+- **Icons:** Lucide React
+- **Hosting:** Vercel
+
+---
+Powered by [MD. Shariar Hossain Sun](https://github.com/sun01822/)
