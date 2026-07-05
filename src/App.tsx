@@ -48,6 +48,36 @@ function App() {
   const [lookupCode, setLookupCode] = useState('')
   const [lookupResult, setLookupResult] = useState<LookupResult | null>(null)
   const [isLookingUp, setIsLookingUp] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+
+  // Handle URL redirection on mount
+  useEffect(() => {
+    const path = window.location.pathname.slice(1)
+    if (path && path !== '') {
+      setIsRedirecting(true)
+      const handleRedirect = async () => {
+        try {
+          const response = await fetch(`https://sunminiurl.onrender.com/api/v1/shorten/${path}`)
+          const data = await response.json()
+          
+          if (data.original_url) {
+            window.location.href = data.original_url
+          } else {
+            toast.error(data.error || 'URL not found')
+            setIsRedirecting(false)
+            // Clear path from url to show home page
+            window.history.pushState({}, '', '/')
+          }
+        } catch (error) {
+          console.error('Error redirecting:', error)
+          toast.error('Failed to redirect. Please try again.')
+          setIsRedirecting(false)
+          window.history.pushState({}, '', '/')
+        }
+      }
+      handleRedirect()
+    }
+  }, [])
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -69,6 +99,24 @@ function App() {
   useEffect(() => {
     localStorage.setItem('urlHistory', JSON.stringify(history))
   }, [history])
+
+  if (isRedirecting) {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 animate-gradient" />
+        </div>
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg mb-6 animate-pulse">
+          <Link2 className="w-8 h-8 text-white" />
+        </div>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          Redirecting...
+        </h1>
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      </div>
+    )
+  }
+
 
   const validateUrl = (url: string): boolean => {
     try {
